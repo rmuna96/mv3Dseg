@@ -1,0 +1,2 @@
+from metrics.hausdorffdistance import HausdorffDistanceMetric
+from metrics.surfacedistance import SurfaceDistanceMetric
