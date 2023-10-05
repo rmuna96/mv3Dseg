@@ -221,10 +221,6 @@ def test(loader, model, device, cf, args):
     return
 
 
-def testonensemble():
-    return
-
-
 def main(args, cf):
     train_images = sorted(
         glob.glob(join(args.pdir, cf.import_params.image_dir, "*.nii.gz"))
@@ -246,7 +242,7 @@ def main(args, cf):
     # ---> get datasets
     train_ds = Dataset(data=train_files, transform=train_trans)
     val_ds = Dataset(data=val_files, transform=val_trans)
-    test_ds = Dataset(data=val_files, transform=val_trans)
+    test_ds = Dataset(data=test_files, transform=val_trans)
 
     # ---> get loaders
     train_loader = DataLoader(train_ds, batch_size=cf.training_params.batch_size, shuffle=True,
@@ -374,25 +370,24 @@ def main(args, cf):
                 val_loss /= val_step
                 val_loss_values.append(val_loss)
 
-                if epoch + 1 == cf.training_params.num_epochs:
-                    # save last model
-                    checkpoint = {
-                        "epoch": epoch,
-                        "model_state_dict": model.state_dict(),
-                        "optimizer_state_dict": optimizer.state_dict(),
-                        "loss": epoch_loss,
-                        "best_metric": best_metric,
-                        "best_metric_epoch": best_metric_epoch,
-                        "best_metrics_epochs_and_time": best_metrics_epochs_and_time,
-                        "epoch_loss_values": epoch_loss_values,
-                        "val_loss_values": val_loss_values,
-                        "metric_values": metric_values,
-                        "epoch_times": epoch_times,
-                        "total_start": total_start,
-                    }
-                    if cf.training_params.flag_schedule:
-                        checkpoint["scheduler_state_dict"] = scheduler.state_dict()
-                    save_checkpoint(checkpoint, join(args.pdir, cf.export_params.save_dir, args.job, f'f{args.fold}'))
+                # save last model
+                checkpoint = {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "loss": epoch_loss,
+                    "best_metric": best_metric,
+                    "best_metric_epoch": best_metric_epoch,
+                    "best_metrics_epochs_and_time": best_metrics_epochs_and_time,
+                    "epoch_loss_values": epoch_loss_values,
+                    "val_loss_values": val_loss_values,
+                    "metric_values": metric_values,
+                    "epoch_times": epoch_times,
+                    "total_start": total_start,
+                }
+                if cf.training_params.flag_schedule:
+                    checkpoint["scheduler_state_dict"] = scheduler.state_dict()
+                save_checkpoint(checkpoint, join(args.pdir, cf.export_params.save_dir, args.job, f'f{args.fold}'))
 
         if cf.training_params.flag_schedule and cf.scheduler_params.scheduler == 'StepLR':
             if new_scaler >= old_scaler:
@@ -431,12 +426,11 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='neural network training')
     parser.add_argument('pdir', type=str, help='project directory')
-    parser.add_argument('--vendor', type=str, default='philips', help='[philips, ge]')
     parser.add_argument('--job', type=str, default='attempts', help='[attempts, xval]')
     parser.add_argument('--fold', type=int, default=0, help='specify the fold to process')
     args = parser.parse_args()
 
-    config_loc = join(args.pdir, 'config', args.vendor, args.job, f'f{args.fold}.json')
+    config_loc = join(args.pdir, 'config', args.job, f'f{args.fold}.json')
     cf = load_conf_file(config_loc)
 
     main(args, cf)
