@@ -10,9 +10,20 @@ from monai.transforms import EnsureType, AsDiscrete, KeepLargestConnectedCompone
 def saveimage(batch_data, outputs, device, cf, args, epoch, test=False):
 
     if test:
-        if not exists(join(args.pdir, cf.export_params.save_dir, args.job, f'f{args.fold}', f'{epoch + 1:03d}')):
-            os.makedirs(join(args.pdir, cf.export_params.save_dir, args.job, f'f{args.fold}', f'{epoch + 1:03d}'))
-        odir = join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs', f'f{args.fold}', f'{epoch + 1:03d}')
+        if hasattr(args, 'nfold'):
+            if not exists(join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs/ensemble',
+                               f'{epoch + 1:03d}')):
+                os.makedirs(join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs/ensemble',
+                                 f'{epoch + 1:03d}'))
+            odir = join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs/ensemble',
+                        f'{epoch + 1:03d}')
+        else:
+            if not exists(join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs', f'f{args.fold}',
+                               f'{epoch + 1:03d}')):
+                os.makedirs(join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs', f'f{args.fold}',
+                                 f'{epoch + 1:03d}'))
+            odir = join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs', f'f{args.fold}',
+                        f'{epoch + 1:03d}')
 
     else:
         if not exists(join(args.pdir, cf.export_params.save_dir, args.job, f'f{args.fold}', f'{epoch + 1:03d}')):
