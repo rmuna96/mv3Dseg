@@ -119,6 +119,7 @@ def nrrd2nifti(idir, odir, jsondir, annulus):
 
         _nrrd2nifti(idir, imgid, frameid, id, odir, annulus=annulus)
 
+
 if __name__ == '__main__':
 
     def str2bool(v):
@@ -134,7 +135,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Philips dataset preprocessing')
     parser.add_argument('idir', type=str, default='./', help='input directory (where nrrd files are)')
-    parser.add_argument('odir', type=str, default='./input/ge', help='output directory (input folder in project dir)')
+    parser.add_argument('odir', type=str, default='./input', help='output directory (input folder in project dir)')
     parser.add_argument('jsondir', type=str, default='./', help='input directory for the json files')
     parser.add_argument('--annulus', type=str2bool, default=False, help='consider the annulus as label in the GT')
     args = parser.parse_args()
