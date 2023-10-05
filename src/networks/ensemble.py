@@ -5,6 +5,11 @@ from utils import sliding_window_inference
 
 
 class EnsembleModel(nn.Module):
+    """
+        Given a list of models this class implements the ensembling of
+        these models by staking them together and taking the maximum
+        predictions along each detected class.
+    """
     def __init__(self, models, outchannels, roi_size=(160, 160, 160), sw_batch_size=4):
         super().__init__()
         self.models = models
