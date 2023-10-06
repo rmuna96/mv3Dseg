@@ -27,6 +27,7 @@ from monai.data import (
 from monai.losses import DiceFocalLoss
 from monai.optimizers import Novograd
 from monai.metrics import DiceMetric
+from monai.utils import set_determinism
 
 import torch
 
@@ -432,5 +433,6 @@ if __name__ == '__main__':
 
     config_loc = join(args.pdir, 'config', args.job, f'f{args.fold}.json')
     cf = load_conf_file(config_loc)
-
+    
+    set_determinism(seed=0)
     main(args, cf)
