@@ -127,18 +127,18 @@ def postprocessing(cf, test=False):
     """
     if test:
         l = [i for i in range(1, cf.model_params.out_channels)]
-        post_label = Compose([
+        post_pred = Compose([
             EnsureType(),
-            AsDiscrete(to_onehot=cf.model_params.out_channels),
+            AsDiscrete(argmax=True, to_onehot=cf.model_params.out_channels),
             KeepLargestConnectedComponent(applied_labels=l)])
 
     else:
-        post_label = Compose([
-            EnsureType(),
-            AsDiscrete(to_onehot=cf.model_params.out_channels)])
-
-    post_pred = Compose([
+        post_pred = Compose([
         EnsureType(),
         AsDiscrete(argmax=True, to_onehot=cf.model_params.out_channels)])
+
+    post_label = Compose([
+        EnsureType(),
+        AsDiscrete(to_onehot=cf.model_params.out_channels)])
 
     return post_label, post_pred
