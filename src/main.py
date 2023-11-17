@@ -72,8 +72,8 @@ def train(model, optimizer, loader, ds, device, scaler, loss_function, step, epo
 
 def val(model, loader, ds, device, loss_function, epoch, step, cf, args, val_loss, logger):
     # evaluation metric
-    dice_metric = DiceMetric(include_background=False, reduction="mean_batch", get_not_nans=False)
-    dice_metric_singleLabel = DiceMetric(include_background=False, reduction="mean_batch", get_not_nans=False)
+    dice_metric = DiceMetric(include_background=False, reduction="mean", get_not_nans=False)
+    dice_metric_singleLabel = DiceMetric(include_background=False, reduction="mean", get_not_nans=False)
 
     for batch_data in loader:
         step_start = time.time()
