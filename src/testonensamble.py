@@ -30,7 +30,6 @@ import torch
 from networks import MdResUNet, EnsembleModel
 
 
-
 def test(loader, model, device, cf, args):
     # evaluation metric
     dice_metric = DiceMetric(include_background=False, reduction="none", get_not_nans=False)
@@ -130,17 +129,15 @@ def test(loader, model, device, cf, args):
 
 def main(args, cf):
     train_images = sorted(
-        glob.glob(join(args.pdir, cf.import_params.image_dir, "*.nii.gz"))
+        glob.glob(join(args.pdir, cf.import_params.image_dir, "test/*.nii.gz"))
     )
     train_labels = sorted(
-        glob.glob(join(args.pdir, cf.import_params.mask_dir, "*.nii.gz"))
+        glob.glob(join(args.pdir, cf.import_params.mask_dir, "test/*.nii.gz"))
     )
-    data_dicts = [
+    test_files = [
         {"image": image_name, "label": label_name}
         for image_name, label_name in zip(train_images, train_labels)
     ]
-
-    test_files = [data_dicts[i] for i in cf.dataset_params.index_test]
 
     # ---> do augmentation
     _, val_trans = preprocessing(cf)
@@ -161,20 +158,19 @@ def main(args, cf):
 
     ### load best model's parameters ###
     models = []
-    for fold in range(args.nfolds):
-        checkpoint = torch.load(join(args.pdir, cf.export_params.save_dir, args.job,
-                                     'best_outputs', f'f{fold}'))
+    for fold in range(args.nfold):
+        checkpoint = torch.load(join(args.pdir, cf.export_params.save_dir, args.job, 'best_outputs', f'f{fold}/checkpoint.pth.tar'))
         print("=> Loading Checkpoint")
         model.load_state_dict(checkpoint["model_state_dict"])
         models.append(model)
 
     roi_size = cf.transform_params.crop_size
     sw_batch_size = 4
-    ensemble_model = EnsembleModel(models, cf.model_params.out_channels, roi_size, sw_batch_size)
+    ensemble_model = EnsembleModel(models, cf.model_params.out_channels, (160, 160, 160), sw_batch_size)
     ensemble_model.eval()
 
     with torch.no_grad():
-        test(test_loader, model, device, cf, args)
+        test(test_loader, ensemble_model, device, cf, args)
 
     return
 
@@ -182,14 +178,13 @@ def main(args, cf):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='neural network training')
-    parser.add_argument('pdir', type=str, help='project directory')
+    parser.add_argument('--pdir', default=".", type=str, help='project directory')
     parser.add_argument('--job', type=str, default='xval', help='xval')
-    parser.add_argument('--nfold', type=int, default=5, help='specify how many fold consider')
+    parser.add_argument('--nfold', type=int, default=10, help='specify how many fold consider')
     parser.add_argument('--fold', type=int, default=0, help='specify the fold to process')
     args = parser.parse_args()
 
-
-    config_loc = join(args.pdir, 'config', args.job, f'f{args.fold}.json')
+    config_loc = join(args.pdir, 'config/main', args.job, f'f{args.fold}.json')
     cf = load_conf_file(config_loc)
 
     set_determinism(seed=0)

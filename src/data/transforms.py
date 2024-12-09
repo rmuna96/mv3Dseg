@@ -11,7 +11,6 @@ from monai.transforms import (
     RandCropByPosNegLabeld,
     EnsureTyped,
     RandRotated,
-    RandAxisFlipd,
     Rand3DElasticd,
     EnsureType,
     AsDiscrete,
@@ -19,18 +18,13 @@ from monai.transforms import (
 )
 from monai.transforms.transform import RandomizableTransform, MapTransform
 from monai.config import KeysCollection
+
 from typing import Any, Optional
 
 import numpy as np
 
 
 class RandSwapAxisd(RandomizableTransform, MapTransform):
-    """
-        Custom transform implementation based on monai's implementation.
-        This transform randomly swaps axis of the image. It may be useful
-        to make the network generalizing on input images with different
-        orientations.
-    """
 
     def __init__(
             self,
@@ -65,43 +59,41 @@ def preprocessing(cf):
     """
 
     train_transforms = [
-
         LoadImaged(keys=["image", "label"]),
         AddChanneld(keys=["image", "label"]),
-
         # change to execute transforms with Tensor data
         EnsureTyped(keys=["image", "label"]),
         Spacingd(["image", "label"], (0.5, 0.5, 0.5), diagonal=True, mode=('bilinear', 'nearest')),
         Orientationd(keys=["image", "label"], axcodes='RAS'),
-
-        #intensity transform
+        # intensity transform
         ScaleIntensityd("image"),
         RandGaussianNoised(keys=['image'],
-                           prob=0.4,
+                           prob=0.3,
                            mean=0.1,
-                           std=0.3),
-        #spatial transform
+                           std=0.2),
+        # spatial transform
         CropForegroundd(keys=["image", "label"], source_key="image"),
-        SpatialPadd(keys=["image", "label"], spatial_size=cf.transform_params.crop_size),
+        SpatialPadd(keys=["image", "label"], spatial_size=(cf.transform_params.crop_size)),
         RandRotated(keys=['image', 'label'],
-                    prob=0.4,
+                    prob=0.3,
                     range_x=(-3.14, 3.14),
                     range_y=(-3.14, 3.14),
                     range_z=(-3.14, 3.14),
                     mode=['bilinear', 'nearest']),
-        RandAxisFlipd(keys=['image', 'label'],
-                      prob=0.4,
+        RandSwapAxisd(keys=['image', 'label'],
+                      prob=0.3,
                       ),
         Rand3DElasticd(keys=['image', 'label'],
                        sigma_range=(1, 3),
                        magnitude_range=(10, 30),
-                       prob=0.4,
+                       prob=0.3,
                        padding_mode=('zeros'),
                        mode=['bilinear', 'nearest']),
-        RandCropByPosNegLabeld(         #this transform make the images a list of dicts even if I set 1 sample
+        RandCropByPosNegLabeld(  # this transform make the images a list of dicts even if I set 1 sample
             keys=["image", "label"],
             label_key="label",
-            spatial_size=cf.transform_params.crop_size, #!todo 2/3 each dimensions according to the mean dimension of the dataset
+            spatial_size=cf.transform_params.crop_size,
+            # !todo 2/3 each dimensions according to the mean dimension of the dataset
             pos=0.8,
             neg=0.2,
             num_samples=1,
@@ -114,7 +106,9 @@ def preprocessing(cf):
         LoadImaged(keys=["image", "label"]),
         AddChanneld(keys=["image", "label"]),
         Spacingd(["image", "label"], (0.5, 0.5, 0.5), diagonal=True, mode=('bilinear', 'nearest')),
+        Orientationd(keys=["image", "label"], axcodes='RAS'),
         ScaleIntensityd("image"),
+        CropForegroundd(keys=["image", "label"], source_key="image"),
         EnsureTyped(keys=["image", "label"]),
     ]
 

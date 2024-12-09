@@ -25,14 +25,14 @@ class EnsembleModel(nn.Module):
             out = sliding_window_inference(x, self.roi_size, self.sw_batch_size, model)
             for l, label in enumerate(labels):
 
-                index = torch.ones_like(x) * m
+                index = torch.ones_like(x, dtype=torch.int64) * m
                 labels[l] = label.scatter(1, index, out.narrow(1, l, 1))
 
         out_e = torch.empty_like(x).expand(-1, self.outchannels, -1, -1, -1)
 
         for l, label in enumerate(labels):
-            index = torch.ones_like(x) * l
-            ensemble = torch.max(label, dim=1, keepdim=True)
+            index = torch.ones_like(x, dtype=torch.int64) * l
+            ensemble = torch.max(label, dim=1, keepdim=True)[0]
             out_e = out_e.scatter(1, index, ensemble)
 
         return out_e

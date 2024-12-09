@@ -17,7 +17,7 @@ from utils import (
     saveimage,
     plotloss_metrics
 )
-from metrics import SurfaceDistanceMetricm, HausdorffDistanceMetric
+from metrics import SurfaceDistanceMetric, HausdorffDistanceMetric
 
 from monai.data import (
     DataLoader,
@@ -28,10 +28,10 @@ from monai.losses import DiceFocalLoss
 from monai.optimizers import Novograd
 from monai.metrics import DiceMetric
 from monai.utils import set_determinism
+from monai.networks.nets import UNet
+from monai.networks.layers import Norm
 
 import torch
-
-from networks import MdResUNet
 
 
 def train(model, optimizer, loader, ds, device, scaler, loss_function, step, epoch_loss, logger):
@@ -47,11 +47,6 @@ def train(model, optimizer, loader, ds, device, scaler, loss_function, step, epo
         # set AMP for MONAI training
         with torch.cuda.amp.autocast():
             outputs = model(inputs)
-            if isinstance(outputs, list):
-                background = [sum([outputs[i].narrow(1, 0, 1) for i in range(len(outputs))])]
-                foreground = [outputs[i].narrow(1, 1, 1) for i in range(len(outputs))]
-
-                outputs = torch.cat(background + foreground, dim=1)
 
             loss = loss_function(outputs, labels)
 
@@ -264,11 +259,14 @@ def main(args, cf):
 
     # ---> get models
     device = torch.device(cf.training_params.device)
-    model = MdResUNet(
+    model = UNet(
+        spatial_dims=3,
         in_channels=cf.model_params.in_channels,
         out_channels=cf.model_params.out_channels,
-        features=cf.model_params.features,
-        num_decoders=cf.model_params.out_channels - 1  # !todo make it user callable
+        channels=cf.model_params.features,
+        strides=(2, 2, 2, 2),
+        num_res_units=2,
+        norm=Norm.BATCH,
     ).to(device)
 
     # ---> set optimizer
@@ -428,7 +426,7 @@ if __name__ == '__main__':
     parser.add_argument('--fold', type=int, default=2, help='specify the fold to process')
     args = parser.parse_args()
 
-    config_loc = join(args.pdir, 'config/main', args.job, f'f{args.fold}.json')
+    config_loc = join(args.pdir, 'config/baseline', args.job, f'f{args.fold}.json')
     cf = load_conf_file(config_loc)
     
     set_determinism(seed=0)
